@@ -142,9 +142,62 @@ def extract_trajectory_data(results_list):
     return combined_data
 
 
+def generate_output_filename(rf_conditions, base_name="square_trajectory_analysis"):
+    """
+    Generate output filename based on RF conditions
+
+    Parameters:
+    - rf_conditions: Dictionary with RF condition parameters
+    - base_name: Base filename
+
+    Returns:
+    - Formatted filename with parameters
+    """
+    filename_parts = [base_name]
+
+    # Check if it's baseline conditions (no RF impairments)
+    bandwidth = rf_conditions.get('bandwidth_kbps')
+    latency = rf_conditions.get('latency_ms')
+    packet_loss = rf_conditions.get('packet_loss_rate')
+
+    # If all conditions are baseline/default, add _baseline
+    if (not bandwidth or bandwidth == "Baseline") and (not latency or latency == 0) and (
+            not packet_loss or packet_loss == 0):
+        filename_parts.append("_baseline")
+    else:
+        # Add bandwidth (only if not baseline)
+        if bandwidth and bandwidth != "Baseline":
+            if bandwidth >= 1000:
+                # For >= 1000, convert to M and handle decimals
+                bw_val = bandwidth / 1000
+                if bw_val == int(bw_val):
+                    filename_parts.append(f"_{int(bw_val)}M")
+                else:
+                    # Remove trailing zeros
+                    filename_parts.append(f"_{bw_val:g}M")
+            else:
+                # For < 1000, keep as k and handle decimals
+                if bandwidth == int(bandwidth):
+                    filename_parts.append(f"_{int(bandwidth)}k")
+                else:
+                    # Remove trailing zeros
+                    filename_parts.append(f"_{bandwidth:g}k")
+
+        # Add latency (only if not 0)
+        if latency and latency > 0:
+            filename_parts.append(f"_{int(latency)}ms")
+
+        # Add packet loss (only if not 0)
+        if packet_loss and packet_loss > 0:
+            filename_parts.append(f"_{int(packet_loss)}")
+
+    return ''.join(filename_parts) + '.pdf'
+
+
 def create_square_trajectory_analysis(results_list, output_file=None):
     """
     Create an error analysis chart for square trajectory tests
+    Only keeping plots 1, 4, and 6 as requested
 
     Parameters:
     - results_list: List of test result data
@@ -155,7 +208,7 @@ def create_square_trajectory_analysis(results_list, output_file=None):
         return
 
     # Make sure figure size is set properly from the beginning
-    plt.rcParams["figure.figsize"] = (20, 6)
+    plt.rcParams["figure.figsize"] = (10, 6)
     plt.rcParams["figure.autolayout"] = False
 
     # Extract trajectory data from all results
@@ -194,17 +247,17 @@ def create_square_trajectory_analysis(results_list, output_file=None):
         packet_loss = 0
 
     # Create a figure for the combined error analysis
-    fig = plt.figure(figsize=(20, 6))
+    fig = plt.figure(figsize=(10, 6))
     if bandwidth == "Baseline":
         title = f'Square Trajectory Analysis (BW: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
     else:
         title = f'Square Trajectory Analysis (BW: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
     fig.suptitle(title, fontsize=14)
 
-    # Set up grid for plots in a single row
-    gs = GridSpec(1, 6, figure=fig)
+    # Set up grid for plots in a single row - only 3 plots now
+    gs = GridSpec(1, 3, figure=fig)
 
-    # 1. Error boxplot
+    # 1. Error boxplot (original plot 1)
     ax1 = fig.add_subplot(gs[0, 0])
     boxplot_data = [overall_errors, xy_errors, height_errors]
     labels = ['Overall', 'XY', 'Z']
@@ -229,128 +282,48 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
 
-    # 2. Error bar chart
+    # 2. Command success rate (original plot 4)
     ax2 = fig.add_subplot(gs[0, 1])
 
-    # Calculate means and standard deviations
-    mean_overall = np.mean(overall_errors) if overall_errors else 0
-    std_overall = np.std(overall_errors) if overall_errors else 0
-
-    mean_xy = np.mean(xy_errors) if xy_errors else 0
-    std_xy = np.std(xy_errors) if xy_errors else 0
-
-    mean_z = np.mean(height_errors) if height_errors else 0
-    std_z = np.std(height_errors) if height_errors else 0
-
-    means = [mean_overall, mean_xy, mean_z]
-    stds = [std_overall, std_xy, std_z]
-
-    x = np.arange(len(labels))
-    ax2.bar(x, means, yerr=stds, align='center', alpha=0.7, ecolor='black', capsize=5)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(labels)
-    ax2.set_ylabel('Error (m)', fontsize=9)
-    ax2.set_title('Avg Error with StdDev', fontsize=10)
-    ax2.tick_params(axis='both', which='major', labelsize=8)
-
-    # Add mean value labels
-    for i, v in enumerate(means):
-        ax2.text(i, v + stds[i] + 0.001, f"{v:.4f}m", ha='center',
-                 fontsize=9, fontweight='bold')
-
-    ax2.grid(True, linestyle='--', alpha=0.7)
-
-    # 3. Path vs Waypoint Errors comparison
-    ax3 = fig.add_subplot(gs[0, 2])
-
-    # Prepare data for bar chart
-    mean_transit = np.mean(transit_errors) if transit_errors else 0
-    std_transit = np.std(transit_errors) if transit_errors else 0
-
-    mean_waypoint = np.mean(waypoint_errors) if waypoint_errors else 0
-    std_waypoint = np.std(waypoint_errors) if waypoint_errors else 0
-
-    path_means = [mean_transit, mean_waypoint]
-    path_stds = [std_transit, std_waypoint]
-    path_labels = ['Path\nFollowing', 'Corner\nPrecision']
-
-    # Create bar chart
-    x = np.arange(len(path_labels))
-    ax3.bar(x, path_means, yerr=path_stds, align='center', alpha=0.7,
-            ecolor='black', capsize=5, color=['skyblue', 'lightgreen'])
-
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(path_labels)
-    ax3.set_ylabel('Error (m)', fontsize=9)
-    ax3.set_title('Path vs Corner Precision', fontsize=10)
-
-    # Add value labels
-    for i, v in enumerate(path_means):
-        ax3.text(i, v + path_stds[i] + 0.001, f"{v:.4f}m", ha='center',
-                 fontsize=9, fontweight='bold')
-
-    ax3.grid(True, linestyle='--', alpha=0.7)
-    ax3.tick_params(axis='both', which='major', labelsize=8)
-
-    # 4. Command success rate
-    ax4 = fig.add_subplot(gs[0, 3])
-
     if total_attempts > 0:
-        ax4.bar(['Success'], [success_rate], color='green', alpha=0.7)
-        ax4.set_ylim([0, 105])  # Leave room for 100%
-        ax4.set_ylabel('Rate (%)', fontsize=9)
-        ax4.set_title('Command Success', fontsize=10)
+        ax2.bar(['Success'], [success_rate], color='green', alpha=0.7)
+        ax2.set_ylim([0, 105])  # Leave room for 100%
+        ax2.set_ylabel('Rate (%)', fontsize=9)
+        ax2.set_title('Command Success', fontsize=10)
 
         # Make percentage more visible
-        ax4.text(0, success_rate + 2, f"{success_rate:.2f}%",
+        ax2.text(0, success_rate + 2, f"{success_rate:.2f}%",
                  ha='center', fontsize=10, fontweight='bold')
 
         # Add simplified command statistics with improved readability
         stats_info = f"{sent}/{total_attempts}"
-        ax4.text(0, success_rate / 2 + 15, stats_info,
+        ax2.text(0, success_rate / 2 + 15, stats_info,
                  ha='center', fontsize=9, fontweight='bold')
 
         # Add dropped packets on a new line with more space
         dropped_info = f"Dropped: {dropped}"
-        ax4.text(0, success_rate / 2 - 15, dropped_info,
+        ax2.text(0, success_rate / 2 - 15, dropped_info,
                  ha='center', fontsize=9)
     else:
-        ax4.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax4.transAxes, fontsize=8)
+        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes, fontsize=8)
 
-    ax4.grid(True, linestyle='--', alpha=0.7)
-    ax4.tick_params(axis='both', which='major', labelsize=8)
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.tick_params(axis='both', which='major', labelsize=8)
 
-    # 5. Overall Error Distribution Histogram
-    ax5 = fig.add_subplot(gs[0, 4])
-    ax5.hist(overall_errors, bins=15, alpha=0.7, color='blue')
-    ax5.set_xlabel('Error (m)', fontsize=9)
-    ax5.set_ylabel('Count', fontsize=9)
-    ax5.set_title('Overall Error Histogram', fontsize=10)
-    ax5.grid(True, linestyle='--', alpha=0.7)
-    ax5.tick_params(axis='both', which='major', labelsize=8)
-
-    # Add minimal statistics text
-    if overall_errors:
-        stats_text = (f"Mean: {mean_overall:.4f}m\n"
-                      f"Med: {np.median(overall_errors):.4f}m")
-        ax5.text(0.95, 0.95, stats_text, transform=ax5.transAxes,
-                 fontsize=8, va='top', ha='right',
-                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, pad=0.5))
-
-    # 6. Transit vs Waypoint Error Histogram
-    ax6 = fig.add_subplot(gs[0, 5])
+    # 3. Transit vs Waypoint Error Histogram (original plot 6)
+    ax3 = fig.add_subplot(gs[0, 2])
 
     if transit_errors:
-        ax6.hist(transit_errors, bins=15, alpha=0.6, color='skyblue', label='Path')
+        ax3.hist(transit_errors, bins=15, alpha=0.6, color='skyblue', label='Path')
     if waypoint_errors:
-        ax6.hist(waypoint_errors, bins=15, alpha=0.6, color='lightgreen', label='Corner')
+        ax3.hist(waypoint_errors, bins=15, alpha=0.6, color='lightgreen', label='Corner')
 
-    ax6.set_xlabel('Error (m)', fontsize=9)
-    ax6.set_ylabel('Count', fontsize=9)
-    ax6.set_title('Path vs Corner Errors', fontsize=10)
-    ax6.legend(fontsize=8, loc='upper right')
-    ax6.grid(True, linestyle='--', alpha=0.7)
-    ax6.tick_params(axis='both', which='major', labelsize=8)
+    ax3.set_xlabel('Error (m)', fontsize=9)
+    ax3.set_ylabel('Count', fontsize=9)
+    ax3.set_title('Path vs Corner Errors', fontsize=10)
+    ax3.legend(fontsize=8, loc='upper right')
+    ax3.grid(True, linestyle='--', alpha=0.7)
+    ax3.tick_params(axis='both', which='major', labelsize=8)
 
     # Adjust layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -378,29 +351,44 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     print(f"Total data points: {len(overall_errors)}")
 
     print("\nOverall Error:")
-    print(f"  Mean: {mean_overall:.4f} m")
-    print(f"  Median: {np.median(overall_errors):.4f} m")
-    print(f"  StdDev: {std_overall:.4f} m")
+    if overall_errors:
+        mean_overall = np.mean(overall_errors)
+        std_overall = np.std(overall_errors)
+        print(f"  Mean: {mean_overall:.4f} m")
+        print(f"  Median: {np.median(overall_errors):.4f} m")
+        print(f"  StdDev: {std_overall:.4f} m")
 
     print("\nXY Plane Error:")
-    print(f"  Mean: {mean_xy:.4f} m")
-    print(f"  Median: {np.median(xy_errors):.4f} m")
-    print(f"  StdDev: {std_xy:.4f} m")
+    if xy_errors:
+        mean_xy = np.mean(xy_errors)
+        std_xy = np.std(xy_errors)
+        print(f"  Mean: {mean_xy:.4f} m")
+        print(f"  Median: {np.median(xy_errors):.4f} m")
+        print(f"  StdDev: {std_xy:.4f} m")
 
     print("\nHeight (Z) Error:")
-    print(f"  Mean: {mean_z:.4f} m")
-    print(f"  Median: {np.median(height_errors):.4f} m")
-    print(f"  StdDev: {std_z:.4f} m")
+    if height_errors:
+        mean_z = np.mean(height_errors)
+        std_z = np.std(height_errors)
+        print(f"  Mean: {mean_z:.4f} m")
+        print(f"  Median: {np.median(height_errors):.4f} m")
+        print(f"  StdDev: {std_z:.4f} m")
 
     print("\nPath Following (Transit Phase):")
-    print(f"  Mean: {mean_transit:.4f} m")
-    print(f"  Median: {np.median(transit_errors):.4f} m")
-    print(f"  StdDev: {std_transit:.4f} m")
+    if transit_errors:
+        mean_transit = np.mean(transit_errors)
+        std_transit = np.std(transit_errors)
+        print(f"  Mean: {mean_transit:.4f} m")
+        print(f"  Median: {np.median(transit_errors):.4f} m")
+        print(f"  StdDev: {std_transit:.4f} m")
 
     print("\nCorner Precision (Waypoint Phase):")
-    print(f"  Mean: {mean_waypoint:.4f} m")
-    print(f"  Median: {np.median(waypoint_errors):.4f} m")
-    print(f"  StdDev: {std_waypoint:.4f} m")
+    if waypoint_errors:
+        mean_waypoint = np.mean(waypoint_errors)
+        std_waypoint = np.std(waypoint_errors)
+        print(f"  Mean: {mean_waypoint:.4f} m")
+        print(f"  Median: {np.median(waypoint_errors):.4f} m")
+        print(f"  StdDev: {std_waypoint:.4f} m")
 
     print("\nCommand Success Rate:")
     print(f"  {success_rate:.2f}% ({sent}/{total_attempts})")
@@ -454,7 +442,13 @@ def main():
         except Exception as e:
             print(f"Error creating output directory: {e}")
 
-    output_file = os.path.join(output_dir, "square_trajectory_analysis.pdf")
+    # Extract RF conditions for filename generation
+    combined_data = extract_trajectory_data(results)
+    rf_conditions = combined_data['rf_conditions']
+
+    # Generate filename with RF conditions
+    filename = generate_output_filename(rf_conditions, "square_trajectory_analysis")
+    output_file = os.path.join(output_dir, filename)
 
     # Create trajectory analysis chart
     create_square_trajectory_analysis(results, output_file)

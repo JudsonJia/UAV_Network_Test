@@ -123,9 +123,62 @@ def extract_stable_phase_data(results_list):
     return combined_data
 
 
+def generate_output_filename(rf_conditions, base_name="average_error_analysis"):
+    """
+    Generate output filename based on RF conditions
+
+    Parameters:
+    - rf_conditions: Dictionary with RF condition parameters
+    - base_name: Base filename
+
+    Returns:
+    - Formatted filename with parameters
+    """
+    filename_parts = [base_name]
+
+    # Check if it's baseline conditions (no RF impairments)
+    bandwidth = rf_conditions.get('bandwidth_kbps')
+    latency = rf_conditions.get('latency_ms')
+    packet_loss = rf_conditions.get('packet_loss_rate')
+
+    # If all conditions are baseline/default, add _baseline
+    if (not bandwidth or bandwidth == "Baseline") and (not latency or latency == 0) and (
+            not packet_loss or packet_loss == 0):
+        filename_parts.append("_baseline")
+    else:
+        # Add bandwidth (only if not baseline)
+        if bandwidth and bandwidth != "Baseline":
+            if bandwidth >= 1000:
+                # For >= 1000, convert to M and handle decimals
+                bw_val = bandwidth / 1000
+                if bw_val == int(bw_val):
+                    filename_parts.append(f"_{int(bw_val)}M")
+                else:
+                    # Remove trailing zeros
+                    filename_parts.append(f"_{bw_val:g}M")
+            else:
+                # For < 1000, keep as k and handle decimals
+                if bandwidth == int(bandwidth):
+                    filename_parts.append(f"_{int(bandwidth)}k")
+                else:
+                    # Remove trailing zeros
+                    filename_parts.append(f"_{bandwidth:g}k")
+
+        # Add latency (only if not 0)
+        if latency and latency > 0:
+            filename_parts.append(f"_{int(latency)}ms")
+
+        # Add packet loss (only if not 0)
+        if packet_loss and packet_loss > 0:
+            filename_parts.append(f"_{int(packet_loss)}")
+
+    return ''.join(filename_parts) + '.pdf'
+
+
 def create_average_error_analysis(results_list, output_file=None):
     """
     Create an error analysis chart based on the average of multiple test results
+    Only keeping plots 1, 3, and 4 as requested
 
     Parameters:
     - results_list: List of test result data
@@ -169,21 +222,21 @@ def create_average_error_analysis(results_list, output_file=None):
         packet_loss = 0
 
     # Make sure figure size is set properly from the beginning
-    plt.rcParams["figure.figsize"] = (20, 6)
+    plt.rcParams["figure.figsize"] = (10, 6)
     plt.rcParams["figure.autolayout"] = False
 
     # Create a figure for the combined error analysis
-    fig = plt.figure(figsize=(20, 6))
+    fig = plt.figure(figsize=(10, 6))
     if bandwidth == "Baseline":
         title = f'UAV Performance Analysis (BW: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
     else:
         title = f'UAV Performance Analysis (BW: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
     fig.suptitle(title, fontsize=14)
 
-    # Set up grid for plots in a single row
-    gs = GridSpec(1, 6, figure=fig)
+    # Set up grid for plots in a single row - only 3 plots now
+    gs = GridSpec(1, 3, figure=fig)
 
-    # 1. Error boxplot
+    # 1. Error boxplot (original plot 1)
     ax1 = fig.add_subplot(gs[0, 0])
     boxplot_data = [overall_errors, xy_errors, height_errors]
     labels = ['Overall', 'XY', 'Z']
@@ -208,118 +261,53 @@ def create_average_error_analysis(results_list, output_file=None):
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
 
-    # 2. Error bar chart
+    # 2. Command success rate (original plot 3)
     ax2 = fig.add_subplot(gs[0, 1])
 
-    # Calculate means and standard deviations
-    mean_overall = np.mean(overall_errors) if overall_errors else 0
-    std_overall = np.std(overall_errors) if overall_errors else 0
-
-    mean_xy = np.mean(xy_errors) if xy_errors else 0
-    std_xy = np.std(xy_errors) if xy_errors else 0
-
-    mean_z = np.mean(height_errors) if height_errors else 0
-    std_z = np.std(height_errors) if height_errors else 0
-
-    means = [mean_overall, mean_xy, mean_z]
-    stds = [std_overall, std_xy, std_z]
-
-    x = np.arange(len(labels))
-    ax2.bar(x, means, yerr=stds, align='center', alpha=0.7, ecolor='black', capsize=5)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(labels)
-    ax2.set_ylabel('Error (m)', fontsize=9)
-    ax2.set_title('Avg Error with StdDev', fontsize=10)
-    ax2.tick_params(axis='both', which='major', labelsize=8)
-
-    # Add mean value labels
-    for i, v in enumerate(means):
-        ax2.text(i, v + stds[i] + 0.001, f"{v:.4f}m", ha='center',
-                 fontsize=9, fontweight='bold')
-
-    ax2.grid(True, linestyle='--', alpha=0.7)
-
-    # 3. Command success rate
-    ax3 = fig.add_subplot(gs[0, 2])
-
     if total_attempts > 0:
-        ax3.bar(['Success'], [success_rate], color='green', alpha=0.7)
-        ax3.set_ylim([0, 105])  # Leave room for 100%
-        ax3.set_ylabel('Rate (%)', fontsize=9)
-        ax3.set_title('Command Success', fontsize=10)
+        ax2.bar(['Success'], [success_rate], color='green', alpha=0.7)
+        ax2.set_ylim([0, 105])  # Leave room for 100%
+        ax2.set_ylabel('Rate (%)', fontsize=9)
+        ax2.set_title('Command Success', fontsize=10)
 
         # Make percentage more visible
-        ax3.text(0, success_rate + 2, f"{success_rate:.2f}%",
+        ax2.text(0, success_rate + 2, f"{success_rate:.2f}%",
                  ha='center', fontsize=10, fontweight='bold')
 
         # Add simplified command statistics with improved readability
         stats_info = f"{sent}/{total_attempts}"
-        ax3.text(0, success_rate / 2 + 15, stats_info,
+        ax2.text(0, success_rate / 2 + 15, stats_info,
                  ha='center', fontsize=9, fontweight='bold')
 
         # Add dropped packets on a new line with more space
         dropped_info = f"Dropped: {dropped}"
-        ax3.text(0, success_rate / 2 - 15, dropped_info,
+        ax2.text(0, success_rate / 2 - 15, dropped_info,
                  ha='center', fontsize=9)
     else:
-        ax3.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax3.transAxes, fontsize=8)
+        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes, fontsize=8)
 
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.tick_params(axis='both', which='major', labelsize=8)
+
+    # 3. Overall Error Distribution Histogram (original plot 4)
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax3.hist(overall_errors, bins=15, alpha=0.7, color='blue')
+    ax3.set_xlabel('Error (m)', fontsize=9)
+    ax3.set_ylabel('Count', fontsize=9)
+    ax3.set_title('Overall Error Histogram', fontsize=10)
     ax3.grid(True, linestyle='--', alpha=0.7)
     ax3.tick_params(axis='both', which='major', labelsize=8)
 
-    # 4. Overall Error Distribution Histogram
-    ax4 = fig.add_subplot(gs[0, 3])
-    ax4.hist(overall_errors, bins=15, alpha=0.7, color='blue')
-    ax4.set_xlabel('Error (m)', fontsize=9)
-    ax4.set_ylabel('Count', fontsize=9)
-    ax4.set_title('Overall Error Histogram', fontsize=10)
-    ax4.grid(True, linestyle='--', alpha=0.7)
-    ax4.tick_params(axis='both', which='major', labelsize=8)
-
     # Add minimal statistics text
     if overall_errors:
+        mean_overall = np.mean(overall_errors)
         stats_text = (f"Mean: {mean_overall:.4f}m\n"
                       f"Med: {np.median(overall_errors):.4f}m")
-        ax4.text(0.95, 0.95, stats_text, transform=ax4.transAxes,
+        ax3.text(0.95, 0.95, stats_text, transform=ax3.transAxes,
                  fontsize=8, va='top', ha='right',
                  bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, pad=0.5))
 
-    # 5. XY Plane Error Distribution Histogram
-    ax5 = fig.add_subplot(gs[0, 4])
-    ax5.hist(xy_errors, bins=15, alpha=0.7, color='red')
-    ax5.set_xlabel('Error (m)', fontsize=9)
-    ax5.set_ylabel('Count', fontsize=9)
-    ax5.set_title('XY Error Histogram', fontsize=10)
-    ax5.grid(True, linestyle='--', alpha=0.7)
-    ax5.tick_params(axis='both', which='major', labelsize=8)
-
-    # Add minimal statistics text
-    if xy_errors:
-        stats_text = (f"Mean: {mean_xy:.4f}m\n"
-                      f"Med: {np.median(xy_errors):.4f}m")
-        ax5.text(0.95, 0.95, stats_text, transform=ax5.transAxes,
-                 fontsize=8, va='top', ha='right',
-                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, pad=0.5))
-
-    # 6. Height Error Distribution Histogram
-    ax6 = fig.add_subplot(gs[0, 5])
-    ax6.hist(height_errors, bins=15, alpha=0.7, color='purple')
-    ax6.set_xlabel('Error (m)', fontsize=9)
-    ax6.set_ylabel('Count', fontsize=9)
-    ax6.set_title('Z Error Histogram', fontsize=10)
-    ax6.grid(True, linestyle='--', alpha=0.7)
-    ax6.tick_params(axis='both', which='major', labelsize=8)
-
-    # Add minimal statistics text
-    if height_errors:
-        stats_text = (f"Mean: {mean_z:.4f}m\n"
-                      f"Med: {np.median(height_errors):.4f}m")
-        ax6.text(0.95, 0.95, stats_text, transform=ax6.transAxes,
-                 fontsize=8, va='top', ha='right',
-                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, pad=0.5))
-
-    # Adjust layout - proper way to set figure size
-    # Don't create a new figure here, just adjust the existing one
+    # Adjust layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # Save figure if output file is specified
@@ -344,17 +332,26 @@ def create_average_error_analysis(results_list, output_file=None):
     print(f"Files analyzed: {len(results_list)}")
     print(f"Total data points: {len(overall_errors)}")
     print("\nOverall Error:")
-    print(f"  Mean: {mean_overall:.4f} m")
-    print(f"  Median: {np.median(overall_errors):.4f} m")
-    print(f"  StdDev: {std_overall:.4f} m")
+    if overall_errors:
+        mean_overall = np.mean(overall_errors)
+        std_overall = np.std(overall_errors)
+        print(f"  Mean: {mean_overall:.4f} m")
+        print(f"  Median: {np.median(overall_errors):.4f} m")
+        print(f"  StdDev: {std_overall:.4f} m")
     print("\nXY Plane Error:")
-    print(f"  Mean: {mean_xy:.4f} m")
-    print(f"  Median: {np.median(xy_errors):.4f} m")
-    print(f"  StdDev: {std_xy:.4f} m")
+    if xy_errors:
+        mean_xy = np.mean(xy_errors)
+        std_xy = np.std(xy_errors)
+        print(f"  Mean: {mean_xy:.4f} m")
+        print(f"  Median: {np.median(xy_errors):.4f} m")
+        print(f"  StdDev: {std_xy:.4f} m")
     print("\nHeight (Z) Error:")
-    print(f"  Mean: {mean_z:.4f} m")
-    print(f"  Median: {np.median(height_errors):.4f} m")
-    print(f"  StdDev: {std_z:.4f} m")
+    if height_errors:
+        mean_z = np.mean(height_errors)
+        std_z = np.std(height_errors)
+        print(f"  Mean: {mean_z:.4f} m")
+        print(f"  Median: {np.median(height_errors):.4f} m")
+        print(f"  StdDev: {std_z:.4f} m")
     print("\nCommand Success Rate:")
     print(f"  {success_rate:.2f}% ({sent}/{total_attempts})")
     print(f"  Dropped packets: {dropped}")
@@ -399,8 +396,13 @@ def main():
     else:
         output_dir = os.path.dirname(user_input)
 
-    # Create the output file path
-    output_file = os.path.join(output_dir, "average_error_analysis.pdf")
+    # Extract RF conditions for filename generation
+    combined_data = extract_stable_phase_data(results)
+    rf_conditions = combined_data['rf_conditions']
+
+    # Generate filename with RF conditions
+    filename = generate_output_filename(rf_conditions, "average_error_analysis")
+    output_file = os.path.join(output_dir, filename)
 
     # Create error analysis chart
     create_average_error_analysis(results, output_file)
