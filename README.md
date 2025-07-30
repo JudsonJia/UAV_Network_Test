@@ -17,7 +17,8 @@ The following graph is about our system architecture:
 
 The demo video can be found at:
 Vertical flight:
-Bandwidth:
+
+Bandwidth(including baseline):
 https://vimeo.com/user/241000174/folder/25403441
 
 Latency:
@@ -27,7 +28,8 @@ Packet Loss:
 https://vimeo.com/user/241000174/folder/25403563
 
 Square flight:
-Bandwidth:
+
+Bandwidth(including baseline):
 https://vimeo.com/user/241000174/folder/25403182
 
 Latency:
