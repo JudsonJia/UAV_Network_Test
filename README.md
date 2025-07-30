@@ -12,7 +12,7 @@ The following pictures showing our test environment:
 
 The following graph is about our system architecture:
 <p align="center">
-  <img width="988" height="879" alt="screen shot 2025-07-30 222833" src="https://github.com/user-attachments/assets/78829353-c7e4-4a61-a4f9-9cf116b16957" />
+  <img width="90%" alt="screen shot 2025-07-30 222833" src="https://github.com/user-attachments/assets/78829353-c7e4-4a61-a4f9-9cf116b16957" />
 </p>
 
 
