@@ -7,6 +7,12 @@ import os
 from matplotlib.gridspec import GridSpec
 from typing import List, Dict, Any
 
+# Set matplotlib to use Arial font to avoid Type 3 font issues
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts to avoid Type 3
+plt.rcParams['ps.fonttype'] = 42   # Same for PostScript output
+
 
 def load_test_results(json_file):
     """
@@ -188,6 +194,14 @@ def create_average_error_analysis(results_list, output_file=None):
         print("No results to analyze")
         return
 
+    # Ensure matplotlib settings are correct for Arial font
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+    plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts
+    plt.rcParams['ps.fonttype'] = 42
+    plt.rcParams["figure.figsize"] = (10, 6)
+    plt.rcParams["figure.autolayout"] = False
+
     # Extract combined stable phase data from all results
     combined_data = extract_stable_phase_data(results_list)
 
@@ -221,17 +235,13 @@ def create_average_error_analysis(results_list, output_file=None):
     if not packet_loss:
         packet_loss = 0
 
-    # Make sure figure size is set properly from the beginning
-    plt.rcParams["figure.figsize"] = (10, 6)
-    plt.rcParams["figure.autolayout"] = False
-
     # Create a figure for the combined error analysis
     fig = plt.figure(figsize=(10, 6))
     if bandwidth == "Baseline":
-        title = f'UAV Performance Analysis (BW: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
+        title = f'UAV Performance Analysis (Data Rate: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
     else:
-        title = f'UAV Performance Analysis (BW: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
-    fig.suptitle(title, fontsize=14)
+        title = f'UAV Performance Analysis (Data Rate: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
+    fig.suptitle(title, fontsize=14, fontfamily='Arial')
 
     # Set up grid for plots in a single row - only 3 plots now
     gs = GridSpec(1, 3, figure=fig)
@@ -256,10 +266,13 @@ def create_average_error_analysis(results_list, output_file=None):
         median.set_linewidth(2)
         median.set_color('darkred')
 
-    ax1.set_ylabel('Error (m)', fontsize=9)
-    ax1.set_title('Error Distribution', fontsize=10)
+    ax1.set_ylabel('Error (m)', fontsize=9, fontfamily='Arial')
+    ax1.set_title('Error Distribution', fontsize=10, fontfamily='Arial')
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
+    # Ensure tick labels also use Arial
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # 2. Command success rate (original plot 3)
     ax2 = fig.add_subplot(gs[0, 1])
@@ -267,36 +280,43 @@ def create_average_error_analysis(results_list, output_file=None):
     if total_attempts > 0:
         ax2.bar(['Success'], [success_rate], color='green', alpha=0.7)
         ax2.set_ylim([0, 105])  # Leave room for 100%
-        ax2.set_ylabel('Rate (%)', fontsize=9)
-        ax2.set_title('Command Success', fontsize=10)
+        ax2.set_ylabel('Rate (%)', fontsize=9, fontfamily='Arial')
+        ax2.set_title('Command Success', fontsize=10, fontfamily='Arial')
 
         # Make percentage more visible
         ax2.text(0, success_rate + 2, f"{success_rate:.2f}%",
-                 ha='center', fontsize=10, fontweight='bold')
+                 ha='center', fontsize=10, fontweight='bold', fontfamily='Arial')
 
         # Add simplified command statistics with improved readability
         stats_info = f"{sent}/{total_attempts}"
         ax2.text(0, success_rate / 2 + 15, stats_info,
-                 ha='center', fontsize=9, fontweight='bold')
+                 ha='center', fontsize=9, fontweight='bold', fontfamily='Arial')
 
         # Add dropped packets on a new line with more space
         dropped_info = f"Dropped: {dropped}"
         ax2.text(0, success_rate / 2 - 15, dropped_info,
-                 ha='center', fontsize=9)
+                 ha='center', fontsize=9, fontfamily='Arial')
     else:
-        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes, fontsize=8)
+        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes,
+                fontsize=8, fontfamily='Arial')
 
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.tick_params(axis='both', which='major', labelsize=8)
+    # Ensure tick labels also use Arial
+    for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # 3. Overall Error Distribution Histogram (original plot 4)
     ax3 = fig.add_subplot(gs[0, 2])
     ax3.hist(overall_errors, bins=15, alpha=0.7, color='blue')
-    ax3.set_xlabel('Error (m)', fontsize=9)
-    ax3.set_ylabel('Count', fontsize=9)
-    ax3.set_title('Overall Error Histogram', fontsize=10)
+    ax3.set_xlabel('Error (m)', fontsize=9, fontfamily='Arial')
+    ax3.set_ylabel('Count', fontsize=9, fontfamily='Arial')
+    ax3.set_title('Overall Error Histogram', fontsize=10, fontfamily='Arial')
     ax3.grid(True, linestyle='--', alpha=0.7)
     ax3.tick_params(axis='both', which='major', labelsize=8)
+    # Ensure tick labels also use Arial
+    for label in ax3.get_xticklabels() + ax3.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # Add minimal statistics text
     if overall_errors:
@@ -304,7 +324,7 @@ def create_average_error_analysis(results_list, output_file=None):
         stats_text = (f"Mean: {mean_overall:.4f}m\n"
                       f"Med: {np.median(overall_errors):.4f}m")
         ax3.text(0.95, 0.95, stats_text, transform=ax3.transAxes,
-                 fontsize=8, va='top', ha='right',
+                 fontsize=8, va='top', ha='right', fontfamily='Arial',
                  bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, pad=0.5))
 
     # Adjust layout
@@ -313,13 +333,14 @@ def create_average_error_analysis(results_list, output_file=None):
     # Save figure if output file is specified
     if output_file:
         try:
-            fig.savefig(output_file, bbox_inches='tight', dpi=300)
+            # Explicitly specify save parameters to ensure TrueType fonts
+            fig.savefig(output_file, bbox_inches='tight', dpi=300, backend='pdf')
             print(f"Combined error analysis chart saved to: {output_file}")
         except Exception as e:
             print(f"Error saving figure to {output_file}: {e}")
             # Try alternate save method
             try:
-                plt.savefig(output_file, bbox_inches='tight', dpi=300)
+                plt.savefig(output_file, bbox_inches='tight', dpi=300, backend='pdf')
                 print(f"Combined error analysis chart saved using alternate method to: {output_file}")
             except Exception as e2:
                 print(f"Failed to save figure using alternate method: {e2}")

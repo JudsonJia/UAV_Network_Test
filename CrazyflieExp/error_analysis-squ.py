@@ -7,6 +7,11 @@ import os
 from matplotlib.gridspec import GridSpec
 from typing import List, Dict, Any
 
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
+
 
 def load_test_results(json_file):
     """
@@ -207,7 +212,10 @@ def create_square_trajectory_analysis(results_list, output_file=None):
         print("No results to analyze")
         return
 
-    # Make sure figure size is set properly from the beginning
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+    plt.rcParams['pdf.fonttype'] = 42
+    plt.rcParams['ps.fonttype'] = 42
     plt.rcParams["figure.figsize"] = (10, 6)
     plt.rcParams["figure.autolayout"] = False
 
@@ -249,10 +257,10 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     # Create a figure for the combined error analysis
     fig = plt.figure(figsize=(10, 6))
     if bandwidth == "Baseline":
-        title = f'Square Trajectory Analysis (BW: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
+        title = f'Square Trajectory Analysis (Data Rate: {bandwidth}, Latency: {latency}ms, Loss: {packet_loss}%)'
     else:
-        title = f'Square Trajectory Analysis (BW: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
-    fig.suptitle(title, fontsize=14)
+        title = f'Square Trajectory Analysis (Data Rate: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
+    fig.suptitle(title, fontsize=14, fontfamily='Arial')
 
     # Set up grid for plots in a single row - only 3 plots now
     gs = GridSpec(1, 3, figure=fig)
@@ -277,10 +285,13 @@ def create_square_trajectory_analysis(results_list, output_file=None):
         median.set_linewidth(2)
         median.set_color('darkred')
 
-    ax1.set_ylabel('Error (m)', fontsize=9)
-    ax1.set_title('Error Distribution', fontsize=10)
+    ax1.set_ylabel('Error (m)', fontsize=9, fontfamily='Arial')
+    ax1.set_title('Error Distribution', fontsize=10, fontfamily='Arial')
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
+    # 确保tick标签也使用Arial
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # 2. Command success rate (original plot 4)
     ax2 = fig.add_subplot(gs[0, 1])
@@ -288,27 +299,31 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     if total_attempts > 0:
         ax2.bar(['Success'], [success_rate], color='green', alpha=0.7)
         ax2.set_ylim([0, 105])  # Leave room for 100%
-        ax2.set_ylabel('Rate (%)', fontsize=9)
-        ax2.set_title('Command Success', fontsize=10)
+        ax2.set_ylabel('Rate (%)', fontsize=9, fontfamily='Arial')
+        ax2.set_title('Command Success', fontsize=10, fontfamily='Arial')
 
         # Make percentage more visible
         ax2.text(0, success_rate + 2, f"{success_rate:.2f}%",
-                 ha='center', fontsize=10, fontweight='bold')
+                 ha='center', fontsize=10, fontweight='bold', fontfamily='Arial')
 
         # Add simplified command statistics with improved readability
         stats_info = f"{sent}/{total_attempts}"
         ax2.text(0, success_rate / 2 + 15, stats_info,
-                 ha='center', fontsize=9, fontweight='bold')
+                 ha='center', fontsize=9, fontweight='bold', fontfamily='Arial')
 
         # Add dropped packets on a new line with more space
         dropped_info = f"Dropped: {dropped}"
         ax2.text(0, success_rate / 2 - 15, dropped_info,
-                 ha='center', fontsize=9)
+                 ha='center', fontsize=9, fontfamily='Arial')
     else:
-        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes, fontsize=8)
+        ax2.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax2.transAxes,
+                fontsize=8, fontfamily='Arial')
 
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.tick_params(axis='both', which='major', labelsize=8)
+    # 确保tick标签也使用Arial
+    for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # 3. Transit vs Waypoint Error Histogram (original plot 6)
     ax3 = fig.add_subplot(gs[0, 2])
@@ -318,12 +333,18 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     if waypoint_errors:
         ax3.hist(waypoint_errors, bins=15, alpha=0.6, color='lightgreen', label='Corner')
 
-    ax3.set_xlabel('Error (m)', fontsize=9)
-    ax3.set_ylabel('Count', fontsize=9)
-    ax3.set_title('Path vs Corner Errors', fontsize=10)
-    ax3.legend(fontsize=8, loc='upper right')
+    ax3.set_xlabel('Error (m)', fontsize=9, fontfamily='Arial')
+    ax3.set_ylabel('Count', fontsize=9, fontfamily='Arial')
+    ax3.set_title('Path vs Corner Errors', fontsize=10, fontfamily='Arial')
+    legend = ax3.legend(fontsize=8, loc='upper right')
+    # 确保图例文字也使用Arial
+    for text in legend.get_texts():
+        text.set_fontfamily('Arial')
     ax3.grid(True, linestyle='--', alpha=0.7)
     ax3.tick_params(axis='both', which='major', labelsize=8)
+    # 确保tick标签也使用Arial
+    for label in ax3.get_xticklabels() + ax3.get_yticklabels():
+        label.set_fontfamily('Arial')
 
     # Adjust layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
@@ -331,13 +352,15 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     # Save figure if output file is specified
     if output_file:
         try:
-            fig.savefig(output_file, bbox_inches='tight', dpi=300)
+            # 明确指定保存参数以确保使用TrueType字体
+            fig.savefig(output_file, bbox_inches='tight', dpi=300,
+                       backend='pdf')  # 明确使用PDF后端
             print(f"Square trajectory analysis chart saved to: {output_file}")
         except Exception as e:
             print(f"Error saving figure to {output_file}: {e}")
             # Try alternate save method
             try:
-                plt.savefig(output_file, bbox_inches='tight', dpi=300)
+                plt.savefig(output_file, bbox_inches='tight', dpi=300, backend='pdf')
                 print(f"Square trajectory analysis chart saved using alternate method to: {output_file}")
             except Exception as e2:
                 print(f"Failed to save figure using alternate method: {e2}")

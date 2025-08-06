@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 
+# Set matplotlib to use Arial font to avoid Type 3 font issues
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts to avoid Type 3
+plt.rcParams['ps.fonttype'] = 42  # Same for PostScript output
+
 
 def load_test_results(results_dir):
     """
@@ -81,14 +87,30 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
     """
     Create separate trajectory plots using Matplotlib, with each flight in an independent coordinate system
     Save as PDF file, and add network condition and flight mode information
+    Files are processed in the order they appear in the file system (not alphabetically sorted)
     """
     if trajectory_df.empty:
         print("Warning: No trajectory data available")
         return None
 
     try:
-        # Get unique test file names and sort them
-        test_files = sorted(trajectory_df['file_name'].unique())
+        # Ensure matplotlib settings are correct for Arial font
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans',
+                                           'sans-serif']
+        plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts
+        plt.rcParams['ps.fonttype'] = 42
+
+        # Get unique test file names in the order they were loaded (NOT sorted)
+        # This preserves the file system order
+        test_files = []
+        seen_files = set()
+        for result in results:
+            file_name = result.get('file_name', '')
+            if file_name and file_name not in seen_files:
+                test_files.append(file_name)
+                seen_files.add(file_name)
+
         num_files = len(test_files)
 
         if num_files == 0:
@@ -96,6 +118,9 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
             return None
 
         print(f"Creating separated trajectory plots for {num_files} flights using Matplotlib")
+        print("File processing order:")
+        for i, file_name in enumerate(test_files):
+            print(f"  {i + 1}. {file_name}")
 
         # Extract network condition information
         network_conditions = {}
@@ -179,9 +204,9 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
 
         # Create a large figure, increase height to accommodate colorbar and title
         fig = plt.figure(figsize=(5 * num_files, 7))
-        fig.suptitle('UAV Flight Trajectories Comparison', fontsize=16)
+        fig.suptitle('UAV Flight Trajectories Comparison', fontsize=16, fontfamily='Arial')
 
-        # Create a subplot for each flight
+        # Create a subplot for each flight in file system order
         for i, file_name in enumerate(test_files):
             # Get data for this flight
             flight_data = trajectory_df[trajectory_df['file_name'] == file_name]
@@ -199,14 +224,14 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
             # Set subplot title, including network conditions and flight mode
             subtitle = f'Flight {i + 1}\n'
             subtitle += f'Mode: {mode}\n'
-            if bandwidth == "Baseline":
-                subtitle += f'BW: {net_cond["bandwidth"]}, '
+            if net_cond['bandwidth'] == "Baseline":
+                subtitle += f'Data Rate: {net_cond["bandwidth"]}, '
             else:
-                subtitle += f'BW: {net_cond["bandwidth"]}kbps, '
+                subtitle += f'Data Rate: {net_cond["bandwidth"]}kbps, '
             subtitle += f'Latency: {net_cond["latency"]}ms, '
             subtitle += f'Loss: {net_cond["packet_loss"]}%'
 
-            ax.set_title(subtitle, fontsize=10)
+            ax.set_title(subtitle, fontsize=10, fontfamily='Arial')
 
             # Add trajectory line
             ax.plot(flight_data['x'], flight_data['y'], flight_data['z'], 'b-', linewidth=2)
@@ -239,25 +264,34 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
             ax.set_ylim(y_min, y_max)
             ax.set_zlim(z_min, z_max)
 
-            # Set coordinate axis labels
-            ax.set_xlabel('X Position (m)')
-            ax.set_ylabel('Y Position (m)')
-            ax.set_zlabel('Z Position (m)')
+            # Set coordinate axis labels with Arial font
+            ax.set_xlabel('X Position (m)', fontfamily='Arial')
+            ax.set_ylabel('Y Position (m)', fontfamily='Arial')
+            ax.set_zlabel('Z Position (m)', fontfamily='Arial')
+
+            # Ensure tick labels use Arial font
+            for label in ax.get_xticklabels() + ax.get_yticklabels() + ax.get_zticklabels():
+                label.set_fontfamily('Arial')
 
             # Adjust view angle
             ax.view_init(elev=30, azim=45)
 
         # Manually adjust subplot position to leave space for colorbar
-        plt.subplots_adjust(top=0.85, bottom=0.15, left=0.05, right=0.95, wspace=0.2)
+        # Note: tight_layout() is not used because it's incompatible with 3D plots
+        plt.subplots_adjust(top=0.85, bottom=0.15, left=0.05, right=0.95, wspace=0.3)
 
         # Add color bar, place at the bottom to make it more horizontal and wide
         cbar_ax = fig.add_axes([0.15, 0.05, 0.7, 0.03])
         cbar = fig.colorbar(scatter, cax=cbar_ax, orientation='horizontal')
-        cbar.set_label('Sequence Index')
+        cbar.set_label('Sequence Index', fontfamily='Arial')
 
-        # Save as PDF
+        # Ensure colorbar tick labels use Arial font
+        for label in cbar.ax.get_xticklabels():
+            label.set_fontfamily('Arial')
+
+        # Save as PDF with explicit backend specification
         pdf_file = os.path.join(folder_path, "flight_trajectories.pdf")
-        plt.savefig(pdf_file, format='pdf', dpi=300, bbox_inches='tight')
+        plt.savefig(pdf_file, format='pdf', dpi=300, bbox_inches='tight', backend='pdf')
         print(f"Trajectory plots saved to PDF: {pdf_file}")
 
         # Close figure to release memory

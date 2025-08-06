@@ -5,6 +5,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# Set matplotlib to use Arial font to avoid Type 3 font issues
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
+plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts to avoid Type 3
+plt.rcParams['ps.fonttype'] = 42  # Same for PostScript output
+
 
 def load_test_results(results_dir):
     """
@@ -85,6 +91,13 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
         return None
 
     try:
+        # Ensure matplotlib settings are correct for Arial font
+        plt.rcParams['font.family'] = 'sans-serif'
+        plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans',
+                                           'sans-serif']
+        plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts
+        plt.rcParams['ps.fonttype'] = 42
+
         # Get unique test file names and sort them
         test_files = sorted(trajectory_df['file_name'].unique())
         num_files = len(test_files)
@@ -97,7 +110,7 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
 
         # Create figure with subplots
         fig, axes = plt.subplots(1, num_files, figsize=(5 * num_files, 5))
-        fig.suptitle('Square Trajectory Flights - 2D Top View', fontsize=16)
+        fig.suptitle('Square Trajectory Flights - 2D Top View', fontsize=16, fontfamily='Arial')
 
         # If only one flight, make axes into array for consistent indexing
         if num_files == 1:
@@ -137,12 +150,12 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
             # Set subplot title
             title = f'Flight {i + 1}\n'
             if net_cond['bandwidth'] == "Baseline":
-                title += f'BW: {net_cond["bandwidth"]}, '
+                title += f'Data Rate: {net_cond["bandwidth"]}, '
             else:
-                title += f'BW: {net_cond["bandwidth"]}kbps, '
+                title += f'Data Rate: {net_cond["bandwidth"]}kbps, '
             title += f'Lat: {net_cond["latency"]}ms, Loss: {net_cond["packet_loss"]}%'
 
-            axes[i].set_title(title, fontsize=10)
+            axes[i].set_title(title, fontsize=10, fontfamily='Arial')
 
             # Plot all data points as scatter points
             scatter = axes[i].scatter(
@@ -168,7 +181,7 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
             # Label waypoints with sequence numbers
             for _, row in target_points.iterrows():
                 axes[i].text(row['target_x'], row['target_y'], str(row['sequence_index'] + 1),
-                             fontsize=9, ha='center', va='center', color='white')
+                             fontsize=9, ha='center', va='center', color='white', fontfamily='Arial')
 
             # Draw ideal path between waypoints
             axes[i].plot(
@@ -179,23 +192,31 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
             )
 
             # Set axis labels and grid
-            axes[i].set_xlabel('X Position (m)')
-            axes[i].set_ylabel('Y Position (m)')
+            axes[i].set_xlabel('X Position (m)', fontfamily='Arial')
+            axes[i].set_ylabel('Y Position (m)', fontfamily='Arial')
             axes[i].grid(True, linestyle='--', alpha=0.7)
             axes[i].set_aspect('equal')  # Equal aspect ratio for top view
+
+            # Ensure tick labels also use Arial
+            for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
+                label.set_fontfamily('Arial')
 
         # Add colorbar
         cbar_ax = fig.add_axes([0.15, 0.05, 0.7, 0.02])
         cbar = fig.colorbar(scatter, cax=cbar_ax, orientation='horizontal')
-        cbar.set_label('Sequence Index')
+        cbar.set_label('Sequence Index', fontfamily='Arial')
+
+        # Ensure colorbar tick labels use Arial
+        for label in cbar.ax.get_xticklabels():
+            label.set_fontfamily('Arial')
 
         # Adjust layout
         plt.tight_layout()
         plt.subplots_adjust(top=0.85, bottom=0.15)
 
-        # Save as PDF
+        # Save as PDF with explicit backend specification
         pdf_file = os.path.join(folder_path, "square_trajectory_plots.pdf")
-        plt.savefig(pdf_file, format='pdf', dpi=300, bbox_inches='tight')
+        plt.savefig(pdf_file, format='pdf', dpi=300, bbox_inches='tight', backend='pdf')
         print(f"Square trajectory plots saved to: {pdf_file}")
 
         # Close figure
