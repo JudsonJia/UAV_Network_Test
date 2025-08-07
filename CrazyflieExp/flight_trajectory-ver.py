@@ -11,7 +11,7 @@ from datetime import datetime
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans', 'sans-serif']
 plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts to avoid Type 3
-plt.rcParams['ps.fonttype'] = 42  # Same for PostScript output
+plt.rcParams['ps.fonttype'] = 42 
 
 
 def load_test_results(results_dir):
@@ -86,22 +86,20 @@ def extract_trajectory_data(results):
 def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
     """
     Create separate trajectory plots using Matplotlib, with each flight in an independent coordinate system
-    Save as PDF file, and add network condition and flight mode information
-    Files are processed in the order they appear in the file system (not alphabetically sorted)
+    Save as PDF file, and add network condition and flight mode information.
     """
     if trajectory_df.empty:
         print("Warning: No trajectory data available")
         return None
 
     try:
-        # Ensure matplotlib settings are correct for Arial font
+
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans',
                                            'sans-serif']
-        plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts
+        plt.rcParams['pdf.fonttype'] = 42 
         plt.rcParams['ps.fonttype'] = 42
 
-        # Get unique test file names in the order they were loaded (NOT sorted)
         # This preserves the file system order
         test_files = []
         seen_files = set()
@@ -285,7 +283,6 @@ def create_matplotlib_trajectory_plots(trajectory_df, folder_path, results):
         cbar = fig.colorbar(scatter, cax=cbar_ax, orientation='horizontal')
         cbar.set_label('Sequence Index', fontfamily='Arial')
 
-        # Ensure colorbar tick labels use Arial font
         for label in cbar.ax.get_xticklabels():
             label.set_fontfamily('Arial')
 
