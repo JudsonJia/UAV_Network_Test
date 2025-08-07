@@ -16,7 +16,6 @@ def safe_bandwidth_test(cf_lib_path):
     but ensures the drone stays locked on the ground
     """
     try:
-        # Dynamically import Crazyflie library
         sys.path.append(cf_lib_path)
         import cflib.crtp
         from cflib.crazyflie import Crazyflie
@@ -42,7 +41,6 @@ def safe_bandwidth_test(cf_lib_path):
             connection_time = time.time() - connection_start_time
             print(f"Connection time: {connection_time:.3f} seconds")
 
-            # IMPORTANT: Ensure UAV is in locked state for safety
             # This prevents the drone from responding to movement commands
             print("Locking motors for safety (drone will NOT take off)")
             scf.cf.platform.send_arming_request(False)
@@ -60,7 +58,6 @@ def safe_bandwidth_test(cf_lib_path):
                 commands_succeeded = 0
                 total_command_time = 0
 
-                # IMPORTANT: These position commands won't cause movement
                 # because the drone is locked, but we can still measure bandwidth
                 x, y, z = 0.0, 0.0, 0.0  # Setting z=0 for extra safety
                 yaw = 0
@@ -72,7 +69,7 @@ def safe_bandwidth_test(cf_lib_path):
                 while time.time() < test_end:
                     cmd_start = time.time()
                     try:
-                        # Send position command - exactly like your flight code
+                        # Send position command
                         # This won't cause the drone to move due to the lock
                         scf.cf.commander.send_position_setpoint(x, y, z, yaw)
                         cmd_end = time.time()
@@ -92,11 +89,10 @@ def safe_bandwidth_test(cf_lib_path):
 
                     commands_sent += 1
 
-                    # Calculate next command time using your method
+                    # Calculate next command time
                     next_time = test_start + (commands_sent * interval)
                     current_time = time.time()
 
-                    # Wait exactly like in your code
                     if next_time > current_time:
                         time.sleep(next_time - current_time)
 
@@ -106,7 +102,7 @@ def safe_bandwidth_test(cf_lib_path):
                 success_rate = commands_succeeded / commands_sent * 100 if commands_sent > 0 else 0
                 avg_command_time = (total_command_time / commands_succeeded) * 1000 if commands_succeeded > 0 else 0
 
-                # Calculate bandwidth based on position command size (approx 16 bytes)
+                # Calculate bandwidth based on position command size
                 command_size_bytes = 16
                 achieved_bandwidth = (achieved_rate * command_size_bytes * 8) / 1000  # kbps
 
