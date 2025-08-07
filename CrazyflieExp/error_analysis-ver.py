@@ -120,7 +120,6 @@ def extract_stable_phase_data(results_list):
             combined_data['xy_errors'].append(point.get('error_xy', 0))
             combined_data['height_errors'].append(point.get('error_z', 0))
 
-        # Aggregate command stats - fixed to properly track totals
         command_stats = result.get('command_stats', {})
         combined_data['command_stats']['sent'] += command_stats.get('sent', 0)
         combined_data['command_stats']['dropped'] += command_stats.get('dropped', 0)
@@ -184,7 +183,6 @@ def generate_output_filename(rf_conditions, base_name="average_error_analysis"):
 def create_average_error_analysis(results_list, output_file=None):
     """
     Create an error analysis chart based on the average of multiple test results
-    Only keeping plots 1, 3, and 4 as requested
 
     Parameters:
     - results_list: List of test result data
@@ -270,7 +268,7 @@ def create_average_error_analysis(results_list, output_file=None):
     ax1.set_title('Error Distribution', fontsize=10, fontfamily='Arial')
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
-    # Ensure tick labels also use Arial
+
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontfamily('Arial')
 
@@ -302,7 +300,7 @@ def create_average_error_analysis(results_list, output_file=None):
 
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.tick_params(axis='both', which='major', labelsize=8)
-    # Ensure tick labels also use Arial
+
     for label in ax2.get_xticklabels() + ax2.get_yticklabels():
         label.set_fontfamily('Arial')
 
@@ -314,7 +312,7 @@ def create_average_error_analysis(results_list, output_file=None):
     ax3.set_title('Overall Error Histogram', fontsize=10, fontfamily='Arial')
     ax3.grid(True, linestyle='--', alpha=0.7)
     ax3.tick_params(axis='both', which='major', labelsize=8)
-    # Ensure tick labels also use Arial
+
     for label in ax3.get_xticklabels() + ax3.get_yticklabels():
         label.set_fontfamily('Arial')
 
