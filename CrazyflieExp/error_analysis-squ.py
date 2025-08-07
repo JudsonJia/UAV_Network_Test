@@ -202,7 +202,6 @@ def generate_output_filename(rf_conditions, base_name="square_trajectory_analysi
 def create_square_trajectory_analysis(results_list, output_file=None):
     """
     Create an error analysis chart for square trajectory tests
-    Only keeping plots 1, 4, and 6 as requested
 
     Parameters:
     - results_list: List of test result data
@@ -234,7 +233,6 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     dropped = command_stats.get('dropped', 0)
     total_attempts = command_stats.get('total_attempts', 0)
 
-    # Fix the success rate calculation
     if total_attempts > 0:
         # Using total_attempts as reference for success rate is more accurate
         success_rate = (sent / total_attempts) * 100 if total_attempts > 0 else 0
@@ -262,7 +260,7 @@ def create_square_trajectory_analysis(results_list, output_file=None):
         title = f'Square Trajectory Analysis (Data Rate: {bandwidth}kbps, Latency: {latency}ms, Loss: {packet_loss}%)'
     fig.suptitle(title, fontsize=14, fontfamily='Arial')
 
-    # Set up grid for plots in a single row - only 3 plots now
+    # Set up grid for plots in a single row
     gs = GridSpec(1, 3, figure=fig)
 
     # 1. Error boxplot (original plot 1)
@@ -289,7 +287,7 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     ax1.set_title('Error Distribution', fontsize=10, fontfamily='Arial')
     ax1.grid(True, linestyle='--', alpha=0.7)
     ax1.tick_params(axis='both', which='major', labelsize=8)
-    # 确保tick标签也使用Arial
+    
     for label in ax1.get_xticklabels() + ax1.get_yticklabels():
         label.set_fontfamily('Arial')
 
@@ -321,7 +319,7 @@ def create_square_trajectory_analysis(results_list, output_file=None):
 
     ax2.grid(True, linestyle='--', alpha=0.7)
     ax2.tick_params(axis='both', which='major', labelsize=8)
-    # 确保tick标签也使用Arial
+    
     for label in ax2.get_xticklabels() + ax2.get_yticklabels():
         label.set_fontfamily('Arial')
 
@@ -337,12 +335,12 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     ax3.set_ylabel('Count', fontsize=9, fontfamily='Arial')
     ax3.set_title('Path vs Corner Errors', fontsize=10, fontfamily='Arial')
     legend = ax3.legend(fontsize=8, loc='upper right')
-    # 确保图例文字也使用Arial
+    
     for text in legend.get_texts():
         text.set_fontfamily('Arial')
     ax3.grid(True, linestyle='--', alpha=0.7)
     ax3.tick_params(axis='both', which='major', labelsize=8)
-    # 确保tick标签也使用Arial
+    
     for label in ax3.get_xticklabels() + ax3.get_yticklabels():
         label.set_fontfamily('Arial')
 
@@ -352,9 +350,9 @@ def create_square_trajectory_analysis(results_list, output_file=None):
     # Save figure if output file is specified
     if output_file:
         try:
-            # 明确指定保存参数以确保使用TrueType字体
+            
             fig.savefig(output_file, bbox_inches='tight', dpi=300,
-                       backend='pdf')  # 明确使用PDF后端
+                       backend='pdf')
             print(f"Square trajectory analysis chart saved to: {output_file}")
         except Exception as e:
             print(f"Error saving figure to {output_file}: {e}")
