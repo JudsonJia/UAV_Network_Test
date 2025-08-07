@@ -91,11 +91,10 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
         return None
 
     try:
-        # Ensure matplotlib settings are correct for Arial font
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans', 'Liberation Sans', 'Bitstream Vera Sans',
                                            'sans-serif']
-        plt.rcParams['pdf.fonttype'] = 42  # Force TrueType fonts
+        plt.rcParams['pdf.fonttype'] = 42 
         plt.rcParams['ps.fonttype'] = 42
 
         # Get unique test file names and sort them
@@ -197,7 +196,6 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
             axes[i].grid(True, linestyle='--', alpha=0.7)
             axes[i].set_aspect('equal')  # Equal aspect ratio for top view
 
-            # Ensure tick labels also use Arial
             for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
                 label.set_fontfamily('Arial')
 
@@ -206,7 +204,6 @@ def create_square_trajectory_plots(trajectory_df, folder_path, results):
         cbar = fig.colorbar(scatter, cax=cbar_ax, orientation='horizontal')
         cbar.set_label('Sequence Index', fontfamily='Arial')
 
-        # Ensure colorbar tick labels use Arial
         for label in cbar.ax.get_xticklabels():
             label.set_fontfamily('Arial')
 
