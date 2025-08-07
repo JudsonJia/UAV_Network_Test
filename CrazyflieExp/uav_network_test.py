@@ -1,7 +1,7 @@
 """
 UAV RF Communication Network Impact Test Script
 Directly simulates network conditions at the RF level
-Applicable for Crazyflie 2.X with Local Positioning System (LPS)
+Applicable for Crazyflie 2.1 with Local Positioning System (LPS)
 Includes battery diagnostics - prevents flight if voltage is below 3.8V
 """
 import math
