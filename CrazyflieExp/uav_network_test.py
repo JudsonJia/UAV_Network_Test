@@ -1244,13 +1244,13 @@ def print_3d_trajectory_error_metrics(error_metrics):
     # Configuration information
     if 'config' in error_metrics:
         config = error_metrics['config']
-        print(f"\n⚙️ Analysis Configuration:")
+        print(f"\n Analysis Configuration:")
         print(f"  Height Weight: {config['height_weight']}")
         print(
             f"  Vertical Transit Mode: {config['vertical_mode']} ({'Along Path' if config['vertical_mode'] == 'path' else 'Direct Ascent/Descent'})")
 
     # Overall 3D statistics
-    print("\n🔍 Overall 3D Accuracy (Entire Flight):")
+    print("\n Overall 3D Accuracy (Entire Flight):")
     if error_metrics['overall']['average'] is not None:
         print(f"  Average 3D Error: {error_metrics['overall']['average']:.4f} m")
         print(f"  Median 3D Error: {error_metrics['overall']['median']:.4f} m")
@@ -1263,7 +1263,7 @@ def print_3d_trajectory_error_metrics(error_metrics):
         print("  No overall data available")
 
     # XY plane analysis
-    print("\n📏 Horizontal Plane (XY) Analysis:")
+    print("\n Horizontal Plane (XY) Analysis:")
     if error_metrics['xy_plane']['overall']['average'] is not None:
         print(f"  Average Horizontal Error: {error_metrics['xy_plane']['overall']['average']:.4f} m")
         print(f"  Median Horizontal Error: {error_metrics['xy_plane']['overall']['median']:.4f} m")
@@ -1271,7 +1271,7 @@ def print_3d_trajectory_error_metrics(error_metrics):
         print(f"  Maximum Horizontal Error: {error_metrics['xy_plane']['overall']['max']:.4f} m")
 
     # Height analysis
-    print("\n📐 Height (Z) Analysis:")
+    print("\n Height (Z) Analysis:")
     if error_metrics['height']['overall']['average'] is not None:
         print(f"  Average Height Error: {error_metrics['height']['overall']['average']:.4f} m")
         print(f"  Median Height Error: {error_metrics['height']['overall']['median']:.4f} m")
@@ -1279,7 +1279,7 @@ def print_3d_trajectory_error_metrics(error_metrics):
         print(f"  Maximum Height Error: {error_metrics['height']['overall']['max']:.4f} m")
 
     # Waypoint phase statistics
-    print("\n🎯 Waypoint Phase Accuracy (When Drone is Near Target Points):")
+    print("\n Waypoint Phase Accuracy (When Drone is Near Target Points):")
     if error_metrics['waypoint_phase']['average'] is not None:
         print(f"  Average 3D Error: {error_metrics['waypoint_phase']['average']:.4f} m")
         print(f"  Average Horizontal Error: {error_metrics['xy_plane']['waypoint']['average']:.4f} m")
@@ -1292,7 +1292,7 @@ def print_3d_trajectory_error_metrics(error_metrics):
         print("  No waypoint phase data available")
 
     # Transit phase statistics
-    print("\n🚁 Transit Phase Analysis (When Drone is Moving Between Waypoints):")
+    print("\n Transit Phase Analysis (When Drone is Moving Between Waypoints):")
     if error_metrics['transit_phase']['average'] is not None:
         print(f"  Average Path Deviation (3D): {error_metrics['transit_phase']['average']:.4f} m")
         print(f"  Average Horizontal Deviation (XY): {error_metrics['xy_plane']['transit']['average']:.4f} m")
@@ -1305,7 +1305,7 @@ def print_3d_trajectory_error_metrics(error_metrics):
         print("  No transit phase data available")
 
     # Data quality information
-    print("\n📊 Data Quality:")
+    print("\n Data Quality:")
     print(f"  Total Data Points: {error_metrics['total_points']}")
     print(f"  Outliers Removed: {error_metrics['outliers_removed']['overall']} overall, "
           f"{error_metrics['outliers_removed']['waypoint']} waypoint, "
